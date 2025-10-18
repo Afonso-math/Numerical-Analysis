@@ -30,7 +30,7 @@ def plot(function, p_, x, n):
     p_func = sp.lambdify(x, p_, modules="mpmath")
     X_dense = [mp.mpf(xi) for xi in np.linspace(-1, 1, 400)]
     Y_int = [p_func(xi) for xi in X_dense]
-    Y_og = [function(float(xi) for xi in X_dense]
+    Y_og = [function(float(xi)) for xi in X_dense]
 
     plt.figure(figsize=(10, 6), dpi=500)
     plt.plot([float(xi) for xi in X_dense], [float(yi) for yi in Y_og],
