@@ -20,6 +20,7 @@ def chebyshev_pol(function, n):
     return sp.simplify(p_)
 
 def plot(function, p_, x, n):
+    print(p_)
     mp.dps = 50  # precision
 
     # Compute Chebyshev nodes using mpmath
@@ -78,7 +79,7 @@ def plot(function, p_, x, n):
             if err > max_err:
                 max_err = err
         errors.append(max_err)
-
+        print(f"n = {deg}, erro máximo = {max_err}")
     plt.figure(figsize=(10,6), dpi=500)
     plt.yscale('log')
     plt.semilogy(range(1, n_max+1), [float(e) for e in errors], marker='o', color='green')
