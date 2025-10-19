@@ -20,7 +20,6 @@ def chebyshev_pol(function, n):
     return sp.simplify(p_)
 
 def plot(function, p_, x, n):
-    print(p_)
     mp.dps = 50  # precision
 
     # Compute Chebyshev nodes using mpmath
@@ -43,7 +42,7 @@ def plot(function, p_, x, n):
     plt.legend()
     plt.xlabel('x')
     plt.ylabel('y')
-    plt.title('Interpolação de Chebyshev da função de Runge')
+    plt.title('Interpolação de Chebyshev da função f(x)')
     plt.grid(True)
     plt.show()
 
@@ -79,7 +78,6 @@ def plot(function, p_, x, n):
             if err > max_err:
                 max_err = err
         errors.append(max_err)
-        print(f"n = {deg}, erro máximo = {max_err}")
     plt.figure(figsize=(10,6), dpi=500)
     plt.yscale('log')
     plt.semilogy(range(1, n_max+1), [float(e) for e in errors], marker='o', color='green')
@@ -96,7 +94,7 @@ def main():
     # Get the function as a string
     function_str = input("Enter the function in terms of x (e.g: x^2, x...): ")
 
-    degree = int(input("Enter the degree of the chebyshev polynomial: "))
+    degree = int(input("Enter the degree of the Chebyshev polynomial: "))
     f_expr = sp.sympify(function_str)
     function = sp.lambdify(x, f_expr, modules=["numpy"])
 
