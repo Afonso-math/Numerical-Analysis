@@ -1,88 +1,82 @@
-import math
-import sympy as sp
 import matplotlib.pyplot as plt
-import numpy as np
 import mpmath as mp
+import sympy as sp
+import time
 
+def chebyshev_coefficients(function, n):
+    """Calcula os coeficientes de Chebyshev para uma função."""
+    y_i = [function(float(mp.cos((2*i+1)*mp.pi/(2*n+2)))) for i in range(n+1)]
+    c = [mp.mpf(sum(y_i)/(n+1))]
+    for k in range(1, n+1):
+        s = mp.mpf(0)
+        for j in range(n+1):
+            s += y_i[j] * mp.cos(k * (2*j+1) * mp.pi / (2*(n+1)))
+        c.append(2 * s / (n+1))
+    return c
 
-def chebyshev(function, n):
-    # Define x as a symbolic variable
-    x=sp.Symbol('x')
+def clenshaw_eval(c, x_val):
+    n = len(c) - 1
+    b_kplus1 = mp.mpf(0)
+    b_kplus2 = mp.mpf(0)
+    for k in range(n, 0, -1):
+        b_k = 2 * x_val * b_kplus1 - b_kplus2 + c[k]
+        b_kplus2 = b_kplus1
+        b_kplus1 = b_k
+    return c[0] + x_val * b_kplus1 - b_kplus2
 
-    # Data
-    T = [1, x]
+def direct_eval(c, x_val):
+    p_ = mp.mpf(0)
+    for i in range(len(c)):
+        p_ += c[i] * mp.cos(i * mp.acos(x_val))
+    return p_
 
-    # Chebyshev nodes
-    [T.append(sp.expand(2*x*T[i]-T[i-1])) for i in range(1,n)]
-    y_i = [function(math.cos((2*i+1)*math.pi/(2*n+2))) for i in range(n+1)]
-    sum_y = sum(y_i)
-    p_ = (sum_y/(n+1))*T[0]
-    p_ += sum((2/(n+1))*sum(y_i[j]*math.cos(((2*j+1)/(2*n+2))*i*math.pi) for j in range(n+1))*T[i] for i in range(1, n+1))
-    print(f"p_i = {p_}")
+def measure_times(function, degrees, repetitions=1000):
+    mp.dps = 200
+    x_val = mp.mpf(0.5)
 
-    # Plot
-    p_func=sp.lambdify(x,p_)
-    X=np.linspace(-1,1,400)
-    Y_int = p_func(X)
-    Y_og = function(X)
-    plt.figure(figsize=(10, 6), dpi=500)
-    plt.plot(X, Y_og, label='Função de Runge', color='blue', linewidth=3, alpha=0.4)
-    plt.plot(X, Y_int, label=f'Polinómio Chebyshev n={n}', color='red', linewidth=2.5, linestyle='--')
-    x_i=[math.cos((2*i+1) * math.pi / (2*(n+1))) for i in range(n+1)]
-    plt.scatter(x_i, y_i, color='black', label='Nodos')
+    times_direct = []
+    times_clenshaw = []
+
+    for n in degrees:
+        c = chebyshev_coefficients(function, n)
+
+        # Soma cossenos
+        start = time.perf_counter()
+        for _ in range(repetitions):
+            direct_eval(c, x_val)
+        t_direct = (time.perf_counter() - start) / repetitions
+        times_direct.append(t_direct)
+
+        # Clenshaw
+        start = time.perf_counter()
+        for _ in range(repetitions):
+            clenshaw_eval(c, x_val)
+        t_clenshaw = (time.perf_counter() - start) / repetitions
+        times_clenshaw.append(t_clenshaw)
+
+        # Print tempos médios
+        print(f"n={n}: Soma cossenos = {t_direct:.6f}s, Clenshaw = {t_clenshaw:.6f}s")
+
+    # Plot tempo
+    plt.figure(figsize=(8,5))
+    plt.plot(degrees, times_direct, 'o-', label="Soma de cossenos")
+    plt.plot(degrees, times_clenshaw, 's-', label="Clenshaw")
+    plt.xlabel("Grau do polinômio (n)")
+    plt.ylabel("Tempo médio de execução (s)")
+    plt.title("Comparação do tempo de execução dos métodos")
     plt.legend()
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.title('Interpolação de Chebyshev da função de Runge')
     plt.grid(True)
     plt.show()
 
-    mp.dps =800
-    n_max = 100
-    n_values = range(1, n_max + 1)
-    errors = []
-
-    x_nodes_max = [mp.cos((2 * k + 1) * mp.pi / (2 * (n_max + 1))) for k in range(n_max + 1)]
-    y_nodes_max = [function(xi) for xi in x_nodes_max]
-
-    a_max = []
-    for j in range(n_max + 1):
-        s = mp.mpf(0)
-        for k in range(n_max + 1):
-            s += y_nodes_max[k] * mp.cos(j * (2 * k + 1) * mp.pi / (2 * (n_max + 1)))
-        coeff = (2 / (n_max + 1)) * s
-        if j == 0:
-            coeff /= 2
-        a_max.append(coeff)
-    print(a_max)
-
-    X_dense = [mp.mpf(xi) for xi in np.linspace(-1, 1, 1000)]
-
-    for n in n_values:
-        a = a_max[:n + 1]
-        max_err = mp.mpf(0)
-        for xi in X_dense:
-            T0, T1 = mp.mpf(1), xi
-            p_val = a[0] * T0 + (a[1] * T1 if n >= 1 else 0)
-            for k in range(2, n + 1):
-                Tk = 2 * xi * T1 - T0
-                p_val += a[k] * Tk
-                T0, T1 = T1, Tk
-            err = abs(function(xi) - p_val)
-            if err > max_err:
-                max_err = err
-        errors.append(max_err)
-        print(f"n = {n}, erro máximo = {max_err}")
-
-    plt.figure(figsize=(10, 6), dpi=500)
-    plt.yscale('log')
-    plt.semilogy(n_values, errors, marker='o', color='green')
-    plt.xlabel('Grau n')
-    plt.ylabel('Erro máximo')
-    plt.title('Erro máximo da interpolação de Chebyshev')
-    plt.grid(True, which='both')
-    plt.show()  # exibe o segundo gráfico
-
 def main():
-    chebyshev()
+    x = sp.Symbol('x')
+
+    function_str = input("Enter the function in terms of x (e.g: x^2, sin(x), ...): ")
+    f_expr = sp.sympify(function_str)
+    function = sp.lambdify(x, f_expr, modules=["numpy"])
+
+    # Mede tempos para n grandes
+    degrees = [100, 500, 1000, 2000, 5000]
+    measure_times(function, degrees)
+
 main()
