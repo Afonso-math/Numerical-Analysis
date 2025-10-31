@@ -6,10 +6,6 @@ import sympy as sp
 def chebyshev_pol(function, n):
     x = sp.Symbol('x')
 
-    # Generate Chebyshev polynomials
-    #T = [1, x]
-    #[T.append(sp.expand(2 * x * T[i] - T[i - 1])) for i in range(1, n)]
-
     # Compute nodes
     y_i = [function(float(mp.cos((2*i+1)*mp.pi/(2*n+2)))) for i in range(n+1)]
 
@@ -43,18 +39,29 @@ def plot(function, p_, x, n, function_str):
     Maxerr = max(abs(y1 - y2) for y1, y2 in zip(Y_og, Y_int))
     print(Maxerr)
 
-    plt.figure(figsize=(10, 6), dpi=500)
+    plt.figure(figsize=(10, 6), dpi=150)
     plt.plot([float(xi) for xi in X_dense], [float(yi) for yi in Y_og],
              label=f'Função f(x) = {function_str}', color='blue', linewidth=3, alpha=0.4)
     plt.plot([float(xi) for xi in X_dense], [float(yi) for yi in Y_int],
              label=f'Polinómio Chebyshev n={n}', color='red', linewidth=2.5, linestyle='--')
     plt.scatter([float(xi) for xi in x_nodes], [float(yi) for yi in y_nodes],
                 color='black', label='Nodos')
-    plt.legend()
+    plt.legend(loc='best')
     plt.xlabel('x')
     plt.ylabel('y')
     plt.title(f'Interpolação de {function_str}')
     plt.grid(True)
+
+    plt.text(
+        0.05, 0.95,
+        f"Erro máximo = {float(Maxerr):.2e}",
+        transform=plt.gca().transAxes,
+        fontsize=12,
+        #horizontalalignment='right',
+        verticalalignment='bottom',
+        bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+    )
+
     plt.show()
 
 def main():
