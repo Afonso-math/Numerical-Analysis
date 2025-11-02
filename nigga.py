@@ -40,7 +40,7 @@ def measure_times(function, degrees, repetitions=1000):
     for n in degrees:
         c = chebyshev_coefficients(function, n)
 
-        # Soma cossenos
+        # Direct sum
         start = time.perf_counter()
         for _ in range(repetitions):
             direct_eval(c, x_val)
@@ -54,10 +54,10 @@ def measure_times(function, degrees, repetitions=1000):
         t_clenshaw = (time.perf_counter() - start) / repetitions
         times_clenshaw.append(t_clenshaw)
 
-        # Print tempos médios
+        # Print average time
         print(f"n={n}: Soma cossenos = {t_direct:.6f}s, Clenshaw = {t_clenshaw:.6f}s")
 
-    # Plot tempo
+    # Plot time
     plt.figure(figsize=(8,5))
     plt.plot(degrees, times_direct, 'o-', label="Soma de cossenos")
     plt.plot(degrees, times_clenshaw, 's-', label="Clenshaw")
@@ -75,7 +75,7 @@ def main():
     f_expr = sp.sympify(function_str)
     function = sp.lambdify(x, f_expr, modules=["numpy"])
 
-    # Mede tempos para n grandes
+    # Time for diferent n
     degrees = [100, 500, 1000, 2000, 5000]
     measure_times(function, degrees)
 
