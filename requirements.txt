@@ -1,3 +1,5 @@
 sympy
 matplotlib
 numpy
+mpmath
+time
